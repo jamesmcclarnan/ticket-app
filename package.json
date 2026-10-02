@@ -1,0 +1,9 @@
+{
+  "name": "lewis-pies-ticket-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "IT / Technical ticket submission app for Lewis Pies, backed by Agilebase.",
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}
