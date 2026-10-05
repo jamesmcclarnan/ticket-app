@@ -78,7 +78,7 @@
       </div>
       <div class="field">
         <label>Email address <span class="req">*</span></label>
-        <input type="email" placeholder="you@lewispies.co.uk" data-field="email" maxlength="150" autocomplete="email" required>
+        <input type="email" placeholder="you@lewispies.co.uk" data-field="email" maxlength="150" autocomplete="email" pattern="[^\s@]+@[^\s@]+\.[^\s@]+" required>
         <span class="error-msg">Please enter a valid email address.</span>
       </div>
       <div class="field">
@@ -112,7 +112,7 @@
         </div>
         <div class="field">
           <label>Details <span class="req">*</span></label>
-          <textarea placeholder="Describe the issue — what happened, when, and what you were trying to do" data-field="details" maxlength="1000" required></textarea>
+          <textarea placeholder="Describe the issue — what happened, when, and what you were trying to do" data-field="details" data-minlength="3" maxlength="1000" required></textarea>
           <span class="error-msg">Please add some detail.</span>
         </div>
         <div class="field">
@@ -140,7 +140,7 @@
         </div>
         <div class="field">
           <label>Details <span class="req">*</span></label>
-          <textarea placeholder="Describe the issue — what happened, when, and current impact on the line" data-field="details" maxlength="1000" required></textarea>
+          <textarea placeholder="Describe the issue — what happened, when, and current impact on the line" data-field="details" data-minlength="3" maxlength="1000" required></textarea>
           <span class="error-msg">Please add some detail.</span>
         </div>
         <div class="field">

@@ -75,7 +75,13 @@ function showScreen(id){
       if(field.offsetParent === null) return; // skip hidden (other category's fields)
       const control = field.querySelector('input,select,textarea');
       if(!control || !control.hasAttribute('required')) return;
-      if(!control.checkValidity()){
+
+      const value = control.value.trim();
+      const minLength = Number(control.dataset.minlength || 0);
+      const isBlank = value === '';
+      const isTooShort = minLength > 0 && value.length < minLength;
+
+      if(!control.checkValidity() || isBlank || isTooShort){
         field.classList.add('invalid');
         valid = false;
       } else {
