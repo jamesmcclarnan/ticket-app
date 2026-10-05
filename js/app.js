@@ -26,7 +26,8 @@ function showScreen(id){
       if(el.type === 'file'){ el.value = ''; el.dispatchEvent(new Event('change')); return; }
       el.value = '';
     });
-    document.querySelectorAll('#screen-form .field.invalid').forEach(f => f.classList.remove('invalid'));
+        document.querySelectorAll('#screen-form .field.invalid').forEach(f => f.classList.remove('invalid'));
+    document.querySelectorAll('textarea[data-field="details"]').forEach(t => t.dispatchEvent(new Event('input')));
     hideSubmitError();
   }
   function goToCategory(){
@@ -276,3 +277,15 @@ function showScreen(id){
   }
   setupFileDrop('itFileDrop', 'itFile');
   setupFileDrop('techFileDrop', 'techFile');
+
+
+  document.querySelectorAll('textarea[data-field="details"]').forEach(textarea => {
+    const counter = textarea.parentElement.querySelector('.char-count');
+    const limit = Number(textarea.getAttribute('maxlength'));
+    function updateCount(){
+      counter.textContent = textarea.value.length + ' / ' + limit;
+      counter.classList.toggle('near-limit', textarea.value.length >= limit - 50);
+    }
+    textarea.addEventListener('input', updateCount);
+    updateCount();
+  });
