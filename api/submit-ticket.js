@@ -4,6 +4,8 @@ import {
   TABLE_ID,
   CATEGORIES,
   FIELD_CODES,
+  FILE_FIELD_CODES,
+  ATTACHMENT,
   LIMITS
 } from "../lib/ticket-config.js";
 
@@ -28,7 +30,19 @@ function readBody(req) {
   }
   return null;
 }
+function readAttachment(attachment) {
+  if (!attachment || typeof attachment !== "object") return null;
+  if (attachment.type !== ATTACHMENT.allowedType) return null;
+  if (typeof attachment.data !== "string" || !attachment.data) return null;
 
+  const buffer = Buffer.from(attachment.data, "base64");
+  if (buffer.length === 0 || buffer.length > ATTACHMENT.maxBytes) return null;
+
+  const isJpeg = buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  if (!isJpeg) return null;
+
+  return { buffer, filename: `attachment-${Date.now()}.jpg` };
+}
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -75,18 +89,42 @@ export default async function handler(req, res) {
   };
 
   const environment = process.env.AB_ENVIRONMENT === "test" ? "test" : "live";
-  const params = new URLSearchParams({
+  const baseParams = {
     c: COMPANY_ID,
     t: TABLE_ID,
     save_new_record: "true",
     ...fieldValues
-  });
-  const targetUrl = `${AB_WRITE_URLS[environment]}?${params.toString()}`;
+  };
+
+  let attachment = null;
+  if (body.attachment) {
+    attachment = readAttachment(body.attachment);
+    if (!attachment) {
+      return res.status(400).json({ error: "Invalid attachment" });
+    }
+  }
+
+  let requestUrl = AB_WRITE_URLS[environment];
+  let requestBody;
+  if (attachment) {
+    requestBody = new FormData();
+    for (const [key, value] of Object.entries(baseParams)) {
+      requestBody.append(key, value);
+    }
+    requestBody.append(
+      FILE_FIELD_CODES[category],
+      new Blob([attachment.buffer], { type: ATTACHMENT.allowedType }),
+      attachment.filename
+    );
+  } else {
+    requestUrl = `${requestUrl}?${new URLSearchParams(baseParams).toString()}`;
+  }
 
   try {
-    const abResponse = await fetch(targetUrl, {
+    const abResponse = await fetch(requestUrl, {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}` }
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: requestBody
     });
 
     const text = await abResponse.text();
