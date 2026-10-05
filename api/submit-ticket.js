@@ -32,16 +32,21 @@ function readBody(req) {
 }
 function readAttachment(attachment) {
   if (!attachment || typeof attachment !== "object") return null;
-  if (attachment.type !== ATTACHMENT.allowedType) return null;
+  if (!Object.hasOwn(ATTACHMENT.types, attachment.type)) return null;
   if (typeof attachment.data !== "string" || !attachment.data) return null;
 
+  const typeInfo = ATTACHMENT.types[attachment.type];
   const buffer = Buffer.from(attachment.data, "base64");
   if (buffer.length === 0 || buffer.length > ATTACHMENT.maxBytes) return null;
 
-  const isJpeg = buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
-  if (!isJpeg) return null;
+  const matchesSignature = typeInfo.signature.every((byte, i) => buffer[i] === byte);
+  if (!matchesSignature) return null;
 
-  return { buffer, filename: `attachment-${Date.now()}.jpg` };
+  return {
+    buffer,
+    mimeType: attachment.type,
+    filename: `attachment-${Date.now()}.${typeInfo.extension}`
+  };
 }
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -113,7 +118,7 @@ export default async function handler(req, res) {
     }
     requestBody.append(
       FILE_FIELD_CODES[category],
-      new Blob([attachment.buffer], { type: ATTACHMENT.allowedType }),
+            new Blob([attachment.buffer], { type: attachment.mimeType }),
       attachment.filename
     );
   } else {
