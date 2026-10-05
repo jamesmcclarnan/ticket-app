@@ -9,7 +9,11 @@ function showScreen(id){
       document.getElementById(id).classList.toggle('on', i < step);
     });
   }
+  let currentCategory = null;
+  let isSubmitting = false;
+
   function selectCategory(cat){
+    currentCategory = cat;
     document.getElementById('itFields').style.display = cat === 'it' ? 'block' : 'none';
     document.getElementById('techFields').style.display = cat === 'technical' ? 'block' : 'none';
     document.getElementById('formTitle').textContent = cat === 'it' ? "Tell us what's happening" : "Tell us about the fault";
@@ -17,9 +21,52 @@ function showScreen(id){
     showScreen('screen-form');
     setProgress(2);
   }
+  function resetForm(){
+    document.querySelectorAll('#screen-form input, #screen-form select, #screen-form textarea').forEach(el => {
+      if(el.type === 'file'){ el.value = ''; return; }
+      el.value = '';
+    });
+    document.querySelectorAll('#screen-form .field.invalid').forEach(f => f.classList.remove('invalid'));
+    hideSubmitError();
+  }
   function goToCategory(){
+    resetForm();
+    currentCategory = null;
     showScreen('screen-category');
     setProgress(1);
+  }
+  function showSubmitError(message){
+    const el = document.getElementById('submitError');
+    el.textContent = message;
+    el.style.display = 'block';
+  }
+  function hideSubmitError(){
+    const el = document.getElementById('submitError');
+    el.textContent = '';
+    el.style.display = 'none';
+  }
+  function collectPayload(){
+    const isIT = currentCategory === 'it';
+    const scope = document.getElementById(isIT ? 'itFields' : 'techFields');
+    return {
+      category: isIT ? 'IT' : 'Technical',
+      name: document.querySelector('[data-field="name"]').value,
+      email: document.querySelector('[data-field="email"]').value,
+      dept: document.querySelector('[data-field="dept"]').value,
+      issueType: scope.querySelector('[data-field="issueType"]').value,
+      details: scope.querySelector('[data-field="details"]').value
+    };
+  }
+  function showConfirmation(ticketRef){
+    const refEl = document.getElementById('ticketRef');
+    if(ticketRef){
+      refEl.textContent = '#' + ticketRef;
+      refEl.style.display = 'inline-block';
+    } else {
+      refEl.style.display = 'none';
+    }
+    showScreen('screen-confirm');
+    setProgress(3);
   }
 
   function validateForm(){
@@ -47,21 +94,41 @@ function showScreen(id){
     if(field) field.classList.remove('invalid');
   });
 
-  function submitTicket(){
+  async function submitTicket(){
+    if(isSubmitting) return;
+    hideSubmitError();
     if(!validateForm()){
       const firstInvalid = document.querySelector('#screen-form .field.invalid');
       if(firstInvalid) firstInvalid.scrollIntoView({behavior:'smooth', block:'center'});
       return;
     }
     const btn = document.getElementById('submitBtn');
+    isSubmitting = true;
     btn.disabled = true;
     btn.classList.add('is-loading');
-    setTimeout(() => {
-      showScreen('screen-confirm');
-      setProgress(3);
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    try {
+      const response = await fetch('/api/submit-ticket', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(collectPayload()),
+        signal: controller.signal
+      });
+      const result = await response.json().catch(() => ({}));
+      if(!response.ok || !result.success){
+        throw new Error(result.error || 'Submission failed');
+      }
+      showConfirmation(result.ticketRef);
+    } catch(err){
+      showSubmitError("That didn't go through. Please check your connection and try again. If it keeps happening, let IT know.");
+    } finally {
+      clearTimeout(timer);
+      isSubmitting = false;
       btn.disabled = false;
       btn.classList.remove('is-loading');
-    }, 650);
+    }
   }
 
   function setupFileDrop(dropId, fileInputId){

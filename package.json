@@ -5,5 +5,6 @@
   "description": "IT / Technical ticket submission app for Lewis Pies, backed by Agilebase.",
   "scripts": {
     "dev": "vercel dev"
-  }
+  },
+  "type": "module"
 }

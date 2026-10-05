@@ -336,3 +336,9 @@
     font-size:12px;
     padding:0 20px 26px;
   }
+
+  .submit-error{
+    color:#C0392B;
+    font-size:13.5px;
+    margin:0 0 12px;
+  }

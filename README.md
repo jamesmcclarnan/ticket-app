@@ -3,82 +3,55 @@
 IT / Technical ticket submission app, replacing the Microsoft Forms + Power
 Automate intake route for `I2) IT Support tickets` in Agilebase.
 
-No build step — plain HTML/CSS/JS, deployed on Vercel the same way as the
-stock take app. Nothing to compile or bundle; open `index.html` in a browser
-(or run `vercel dev`) and it works as-is.
+No build step: plain HTML/CSS/JS plus one Vercel serverless function.
 
 ## Structure
 
 ```
 ticket-app/
-├── index.html          Markup only — no inline styles or scripts
-├── css/
-│   └── styles.css      All styling
-├── js/
-│   └── app.js           Screen navigation, validation, file-drop handling
-├── assets/
-│   ├── james.jpg        IT tile photo
-│   └── britt.jpg         Technical tile photo
-├── api/
-│   └── proxy.js          Placeholder — see "What's NOT done yet" below
+├── index.html            Markup only
+├── css/styles.css        All styling
+├── js/app.js             Screen navigation, validation, submit logic
+├── assets/               Tile photos
+├── api/submit-ticket.js  Serverless function: validates, then writes to Agilebase
+├── lib/ticket-config.js  Agilebase table ID, field codes, limits (edit field codes here)
 ├── package.json
-├── .gitignore
-└── .env.example          Documents env vars the proxy will need later
+└── .env.example
 ```
 
-The Lewis Pies logo is kept as inline SVG directly in `index.html` (in two
-places — the header and the homescreen) rather than as a separate file. This
-is deliberate: the logo includes live text (the "1936" mark) set in a Google
-Font, and inline SVG is the only reliable way to guarantee that renders
-correctly everywhere — an external `.svg` file loaded via `<img>` doesn't
-reliably pick up page-level web fonts across browsers. If this ever becomes
-annoying to maintain, the real fix is converting "1936" to a vector path
-(removing the font dependency entirely), not moving it to an external file.
+## How a submission works
 
-## What's done
+1. The browser sends a JSON POST to `/api/submit-ticket` containing only:
+   category, name, email, dept, issueType, details.
+2. The function checks the category, required fields, email shape and length
+   limits, and ignores anything else in the payload.
+3. It builds the Agilebase write request server-side (same query-string
+   pattern as the stock take app: `Public.ab` with `c`, `t`,
+   `save_new_record=true` and one parameter per field code) and sends it with
+   the API key as a Bearer header.
+4. Agilebase returns `row_id`, which is shown on the confirmation screen.
 
-- Full 3-screen flow: category choice → form (IT or Technical fields,
-  shown/hidden based on category) → confirmation
-- Client-side validation on required fields
-- Working file picker + drag-and-drop on the attachment field (selects a
-  real file in the browser — nothing uploaded anywhere yet)
-- Screen transitions, loading state on submit, confirmation animation
+The browser never sees the Agilebase URL, table ID, field codes or key.
 
-## What's NOT done yet
+## Environment variables (Vercel -> Settings -> Environment Variables)
 
-- **No Agilebase integration.** `api/proxy.js` is a stub that returns
-  `501 Not Implemented`. The Submit button currently just shows the
-  confirmation screen locally — it does not send data anywhere.
-- **No duplicate-submission protection.** Before wiring up the real API
-  call, add an idempotency token: generate a random ID client-side when the
-  form loads, send it with the submission, and have the proxy (or an AB-side
-  view) reject a second request carrying the same token. This is cheap
-  insurance against double-taps or back-button resubmits.
-- **Technical issue type options are placeholders** (Placeholder A–F) until
-  the Technical team gets back with real categories post-audit.
-- **No real ticket reference on confirmation** — currently hardcoded
-  `#000000`. Needs to show the actual AB-assigned Ticket ID once the API
-  call is wired up.
-- **Not yet deployed anywhere.** No GitHub repo, no Vercel project exists
-  for this yet — next step is pushing this folder to a new repo and
-  connecting it to Vercel, same as the stock take app.
-- **No custom domain.** Once a Vercel project exists, add
-  `tickets.lewispies.co.uk` as a custom domain (Settings → Domains) rather
-  than relying on the default `.vercel.app` URL — keeps the QR code stable
-  long-term regardless of what happens to the Vercel project itself.
+| Name | Purpose |
+|---|---|
+| `AB_TICKETS_API_KEY` | Key used for the write. Required. |
+| `AB_ENVIRONMENT` | `live` writes to the live instance. Anything else, or unset, writes to the test instance. |
 
-## Local development
+## Known limits and deferred items
 
-No installs needed to just look at it:
-
-```
-open index.html
-```
-
-For testing the API route locally once it's built out, you'll need the
-Vercel CLI:
-
-```
-npm i -g vercel
-vercel dev
-```
+- File attachments are hidden in V1 (AB file fields need their own upload
+  handling). To restore the UI, remove the `hidden` attribute from the two
+  "Attachment (optional)" fields in `index.html`; the upload itself still has
+  to be built.
+- Details is capped at 1000 characters because the data travels in the URL.
+- No server-side idempotency token. The submit button locks while a request is
+  in flight, and the Agilebase duplicate flag catches repeats within 24 hours.
+- Technical issue types are placeholders (A-F) until the Technical team replies.
+- Dept and IT issue type options in the form should match the values already
+  used in Agilebase / the old MS Form.
+- Ticket reference on the confirmation screen is Agilebase's `row_id`; confirm
+  it matches the Ticket ID field on the first test.
+- Custom domain (`tickets.lewispies.co.uk`) not set up yet.

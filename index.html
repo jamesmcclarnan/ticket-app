@@ -73,17 +73,17 @@
       <div class="section-label">Your details</div>
       <div class="field">
         <label>Name <span class="req">*</span></label>
-        <input type="text" placeholder="Full name" required>
+        <input type="text" placeholder="Full name" data-field="name" maxlength="100" autocomplete="name" required>
         <span class="error-msg">Please enter your name.</span>
       </div>
       <div class="field">
         <label>Email address <span class="req">*</span></label>
-        <input type="email" placeholder="you@lewispies.co.uk" required>
+        <input type="email" placeholder="you@lewispies.co.uk" data-field="email" maxlength="150" autocomplete="email" required>
         <span class="error-msg">Please enter a valid email address.</span>
       </div>
       <div class="field">
         <label>Department <span class="req">*</span></label>
-        <select required>
+        <select required data-field="dept">
           <option value="">Select department</option>
           <option>Production</option>
           <option>Sales</option>
@@ -100,7 +100,7 @@
         <div class="section-label">Issue details</div>
         <div class="field">
           <label>Issue type <span class="req">*</span></label>
-          <select required>
+          <select required data-field="issueType">
             <option value="">Select issue type</option>
             <option>Software</option>
             <option>Hardware</option>
@@ -112,10 +112,10 @@
         </div>
         <div class="field">
           <label>Details <span class="req">*</span></label>
-          <textarea placeholder="Describe the issue — what happened, when, and what you were trying to do" required></textarea>
+          <textarea placeholder="Describe the issue — what happened, when, and what you were trying to do" data-field="details" maxlength="1000" required></textarea>
           <span class="error-msg">Please add some detail.</span>
         </div>
-        <div class="field">
+        <div class="field" hidden>
           <label>Attachment (optional)</label>
           <label class="file-drop" id="itFileDrop">
             <input type="file" id="itFile" accept="image/*">
@@ -129,7 +129,7 @@
         <div class="section-label">Issue details</div>
         <div class="field">
           <label>Issue type <span class="req">*</span></label>
-          <select required>
+          <select required data-field="issueType">
             <option value="">Select issue type</option>
             <option>Placeholder A</option>
             <option>Placeholder B</option>
@@ -142,10 +142,10 @@
         </div>
         <div class="field">
           <label>Details <span class="req">*</span></label>
-          <textarea placeholder="Describe the issue — what happened, when, and current impact on the line" required></textarea>
+          <textarea placeholder="Describe the issue — what happened, when, and current impact on the line" data-field="details" maxlength="1000" required></textarea>
           <span class="error-msg">Please add some detail.</span>
         </div>
-        <div class="field">
+        <div class="field" hidden>
           <label>Attachment (optional)</label>
           <label class="file-drop" id="techFileDrop">
             <input type="file" id="techFile" accept="image/*,video/*">
@@ -154,6 +154,7 @@
         </div>
       </div>
 
+      <p class="submit-error" id="submitError" role="alert" style="display:none"></p>
       <div class="actions">
         <button class="btn-primary" id="submitBtn" onclick="submitTicket()">
           <span class="btn-label">Submit ticket</span>
@@ -170,7 +171,7 @@
         </div>
         <h1>Ticket submitted</h1>
         <p>We've logged your request and the right team will pick it up shortly.</p>
-        <div class="ref">#000000</div>
+        <div class="ref" id="ticketRef" style="display:none"></div>
         <div class="actions">
           <button class="btn-secondary" onclick="goToCategory()">Submit another ticket</button>
         </div>
