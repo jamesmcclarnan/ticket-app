@@ -23,7 +23,7 @@ function showScreen(id){
   }
   function resetForm(){
     document.querySelectorAll('#screen-form input, #screen-form select, #screen-form textarea').forEach(el => {
-      if(el.type === 'file'){ el.value = ''; return; }
+      if(el.type === 'file'){ el.value = ''; el.dispatchEvent(new Event('change')); return; }
       el.value = '';
     });
     document.querySelectorAll('#screen-form .field.invalid').forEach(f => f.classList.remove('invalid'));
@@ -94,6 +94,83 @@ function showScreen(id){
     if(field) field.classList.remove('invalid');
   });
 
+  const ATTACHMENT_LIMITS = {
+    maxBytes: 3 * 1024 * 1024,
+    maxImageDimension: 1600,
+    jpegQuality: 0.8
+  };
+
+  function guessType(file){
+    if(file.type) return file.type;
+    return /\.pdf$/i.test(file.name) ? 'application/pdf' : '';
+  }
+
+  function attachmentProblem(file){
+    const type = guessType(file);
+    if(type === 'application/pdf'){
+      if(file.size > ATTACHMENT_LIMITS.maxBytes) return 'That PDF is over 3 MB. Please attach a smaller one.';
+      return '';
+    }
+    if(type.startsWith('image/')) return '';
+    return 'Please attach a photo, screenshot or PDF.';
+  }
+
+  function loadImage(file){
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('That image could not be read. Try a different photo, a screenshot or a PDF.'));
+      };
+      img.src = url;
+    });
+  }
+
+  async function shrinkImage(file){
+    const img = await loadImage(file);
+    const longest = Math.max(img.naturalWidth, img.naturalHeight);
+    const scale = Math.min(1, ATTACHMENT_LIMITS.maxImageDimension / longest);
+    const width = Math.round(img.naturalWidth * scale);
+    const height = Math.round(img.naturalHeight * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        blob => blob ? resolve(blob) : reject(new Error('That image could not be processed.')),
+        'image/jpeg',
+        ATTACHMENT_LIMITS.jpegQuality
+      );
+    });
+  }
+
+  function fileToBase64(blob){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(',')[1]);
+      reader.onerror = () => reject(new Error('That file could not be read.'));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function prepareAttachment(file){
+    const problem = attachmentProblem(file);
+    if(problem) throw new Error(problem);
+
+    if(guessType(file) === 'application/pdf'){
+      return { type: 'application/pdf', data: await fileToBase64(file) };
+    }
+    const jpeg = await shrinkImage(file);
+    if(jpeg.size > ATTACHMENT_LIMITS.maxBytes) throw new Error('That image is too large. Please try a smaller one.');
+    return { type: 'image/jpeg', data: await fileToBase64(jpeg) };
+  }
+
   async function submitTicket(){
     if(isSubmitting) return;
     hideSubmitError();
@@ -107,13 +184,25 @@ function showScreen(id){
     btn.disabled = true;
     btn.classList.add('is-loading');
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 20000);
+    let timer;
     try {
+      const payload = collectPayload();
+      const fileInput = document.getElementById(currentCategory === 'it' ? 'itFile' : 'techFile');
+      if(fileInput.files && fileInput.files[0]){
+        try {
+          payload.attachment = await prepareAttachment(fileInput.files[0]);
+        } catch(fileErr){
+          showSubmitError(fileErr.message);
+          return;
+        }
+      }
+
+      const controller = new AbortController();
+      timer = setTimeout(() => controller.abort(), 45000);
       const response = await fetch('/api/submit-ticket', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(collectPayload()),
+        body: JSON.stringify(payload),
         signal: controller.signal
       });
       const result = await response.json().catch(() => ({}));
@@ -122,7 +211,12 @@ function showScreen(id){
       }
       showConfirmation(result.ticketRef);
     } catch(err){
-      showSubmitError("That didn't go through. Please check your connection and try again. If it keeps happening, let IT know.");
+      console.error('Ticket submit failed:', err);
+      if(err.message === 'Invalid attachment'){
+        showSubmitError("That file wasn't accepted. Please attach a photo, screenshot or a PDF under 3 MB, or remove it and submit without.");
+      } else {
+        showSubmitError("That didn't go through. Please check your connection and try again. If it keeps happening, let IT know.");
+      }
     } finally {
       clearTimeout(timer);
       isSubmitting = false;
@@ -135,14 +229,32 @@ function showScreen(id){
     const drop = document.getElementById(dropId);
     const input = document.getElementById(fileInputId);
     const textEl = drop.querySelector('.file-drop-text');
+    const errorEl = drop.parentElement.querySelector('.file-error');
     const defaultHTML = textEl.innerHTML;
+
+    function showFileError(message){
+      errorEl.textContent = message;
+      errorEl.style.display = message ? 'block' : 'none';
+    }
+
     input.addEventListener('change', () => {
-      if(input.files && input.files[0]){
-        textEl.textContent = '📎 ' + input.files[0].name;
-      } else {
+      const file = input.files && input.files[0];
+      if(!file){
         textEl.innerHTML = defaultHTML;
+        showFileError('');
+        return;
       }
+      const problem = attachmentProblem(file);
+      if(problem){
+        input.value = '';
+        textEl.innerHTML = defaultHTML;
+        showFileError(problem);
+        return;
+      }
+      textEl.textContent = '📎 ' + file.name;
+      showFileError('');
     });
+
     ['dragenter','dragover'].forEach(evt => {
       drop.addEventListener(evt, (e) => { e.preventDefault(); drop.classList.add('dragover'); });
     });
@@ -152,7 +264,7 @@ function showScreen(id){
     drop.addEventListener('drop', (e) => {
       if(e.dataTransfer.files && e.dataTransfer.files[0]){
         input.files = e.dataTransfer.files;
-        textEl.textContent = '📎 ' + e.dataTransfer.files[0].name;
+        input.dispatchEvent(new Event('change'));
       }
     });
   }
