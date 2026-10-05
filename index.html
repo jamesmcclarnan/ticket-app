@@ -115,12 +115,13 @@
           <textarea placeholder="Describe the issue — what happened, when, and what you were trying to do" data-field="details" maxlength="1000" required></textarea>
           <span class="error-msg">Please add some detail.</span>
         </div>
-        <div class="field" hidden>
+        <div class="field">
           <label>Attachment (optional)</label>
           <label class="file-drop" id="itFileDrop">
-            <input type="file" id="itFile" accept="image/*">
-            <span class="file-drop-text"><strong>Tap to attach</strong> a photo or screenshot</span>
+            <input type="file" id="itFile" accept="image/*,application/pdf">
+            <span class="file-drop-text"><strong>Tap to attach</strong> a photo, screenshot or PDF</span>
           </label>
+          <span class="file-error" role="alert" style="display:none"></span>
         </div>
       </div>
 
@@ -145,12 +146,13 @@
           <textarea placeholder="Describe the issue — what happened, when, and current impact on the line" data-field="details" maxlength="1000" required></textarea>
           <span class="error-msg">Please add some detail.</span>
         </div>
-        <div class="field" hidden>
+        <div class="field">
           <label>Attachment (optional)</label>
           <label class="file-drop" id="techFileDrop">
-            <input type="file" id="techFile" accept="image/*,video/*">
-            <span class="file-drop-text"><strong>Tap to attach</strong> a photo or video</span>
+            <input type="file" id="techFile" accept="image/*,application/pdf">
+            <span class="file-drop-text"><strong>Tap to attach</strong> a photo, screenshot or PDF</span>
           </label>
+          <span class="file-error" role="alert" style="display:none"></span>
         </div>
       </div>
 
