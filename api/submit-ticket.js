@@ -76,11 +76,16 @@ export default async function handler(req, res) {
   const issueType = clean(body.issueType, LIMITS.issueType);
   const details = clean(body.details, LIMITS.details);
 
-  if (!name || !email || !dept || !issueType || !details) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
-  if (!EMAIL_PATTERN.test(email)) {
-    return res.status(400).json({ error: "Invalid email address" });
+  const checks = [
+    [!name, "name", "Please enter your name."],
+    [!EMAIL_PATTERN.test(email), "email", "Please enter a valid email address."],
+    [!dept, "dept", "Please select a department."],
+    [!issueType, "issueType", "Please select an issue type."],
+    [details.length < LIMITS.minDetails, "details", "Please add some detail."]
+  ];
+  const failed = checks.find(([isProblem]) => isProblem);
+  if (failed) {
+    return res.status(400).json({ error: failed[2], field: failed[1] });
   }
 
   const isIT = category === "IT";
