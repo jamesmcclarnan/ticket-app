@@ -74,7 +74,7 @@ export default async function handler(req, res) {
     [isIT ? FIELD_CODES.itDetails : FIELD_CODES.techDetails]: details
   };
 
-  const environment = process.env.AB_ENVIRONMENT === "live" ? "live" : "test";
+  const environment = process.env.AB_ENVIRONMENT === "test" ? "test" : "live";
   const params = new URLSearchParams({
     c: COMPANY_ID,
     t: TABLE_ID,
