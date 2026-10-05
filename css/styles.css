@@ -351,3 +351,28 @@
     margin-top:4px;
   }
   .char-count.near-limit{color:#C0392B;}
+
+    .loading-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(50,50,50,0.55);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+  }
+  .loading-pie{
+    font-size:64px;
+    animation:spin 1s linear infinite;
+  }
+  .loading-progress{
+    margin-top:14px;
+    font-weight:700;
+    font-family:'Inter',Arial,sans-serif;
+    font-size:18px;
+    color:#fff;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .loading-pie{animation:none;}
+  }

@@ -190,6 +190,7 @@ function showScreen(id){
     isSubmitting = true;
     btn.disabled = true;
     btn.classList.add('is-loading');
+        document.getElementById('loadingOverlay').style.display = 'flex';
 
     let timer;
     try {
@@ -229,6 +230,7 @@ function showScreen(id){
       isSubmitting = false;
       btn.disabled = false;
       btn.classList.remove('is-loading');
+      document.getElementById('loadingOverlay').style.display = 'none';
     }
   }
 
