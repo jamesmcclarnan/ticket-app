@@ -117,13 +117,6 @@ export default async function handler(req, res) {
     const rawJobNumber = result[MAINTENANCE.jobNumberField];
     const jobNumber = /^[A-Za-z0-9-]{1,20}$/.test(String(rawJobNumber ?? "")) ? String(rawJobNumber) : null;
 
-    // TEMPORARY: remove once we have confirmed the job number comes back.
-    console.log(
-      "MAINT-TEST job number key present:", Object.hasOwn(result, MAINTENANCE.jobNumberField),
-      "| value:", JSON.stringify(rawJobNumber ?? null),
-      "| row_id:", result.row_id
-    );
-
     return res.status(200).json({ success: true, ...(jobNumber ? { ticketRef: jobNumber } : {}) });
   } catch (err) {
     console.error("Agilebase request failed:", err.message);
