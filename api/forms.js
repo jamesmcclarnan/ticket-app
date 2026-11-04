@@ -9,9 +9,3 @@ export default function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   return res.status(200).json({ forms: getEnabledForms(process.env.ENABLED_FORMS) });
 }
-
-FORMS.maintenance = {
-  table: MAINTENANCE.table,
-  apiKeyEnv: MAINTENANCE.apiKeyEnv,
-  fileField: MAINTENANCE.fileField
-};
