@@ -381,3 +381,4 @@
 
      .tile .icon.emoji{font-size:26px;}
   #commonFields .section-label, #maintFields .section-label{margin-top:28px;} 
+    .serious-note{background:#FDF3E1;border:1px solid #F9B333;border-radius:10px;padding:12px 14px;margin:0 0 16px;font-size:13.5px;line-height:1.45;color:var(--ink);}

@@ -100,9 +100,6 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: "Could not save the job" });
     }
 
-    // TEMPORARY: remove once we know which field holds the front-facing job number.
-    console.log("MAINT-TEST Agilebase response:", text.slice(0, 1000));
-
     let result;
     try {
       result = JSON.parse(text);
@@ -116,7 +113,18 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: "Could not confirm the job was saved" });
     }
 
-    return res.status(200).json({ success: true });
+        // The job number engineers see is NOT row_id. Show it only if Agilebase sends it back.
+    const rawJobNumber = result[MAINTENANCE.jobNumberField];
+    const jobNumber = /^[A-Za-z0-9-]{1,20}$/.test(String(rawJobNumber ?? "")) ? String(rawJobNumber) : null;
+
+    // TEMPORARY: remove once we have confirmed the job number comes back.
+    console.log(
+      "MAINT-TEST job number key present:", Object.hasOwn(result, MAINTENANCE.jobNumberField),
+      "| value:", JSON.stringify(rawJobNumber ?? null),
+      "| row_id:", result.row_id
+    );
+
+    return res.status(200).json({ success: true, ...(jobNumber ? { ticketRef: jobNumber } : {}) });
   } catch (err) {
     console.error("Agilebase request failed:", err.message);
     return res.status(502).json({ error: "Could not reach the job system" });
