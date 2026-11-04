@@ -291,3 +291,18 @@ function showScreen(id){
     textarea.addEventListener('input', updateCount);
     updateCount();
   });
+
+    async function applyEnabledForms(){
+    try {
+      const response = await fetch('/api/forms', { cache: 'no-store' });
+      if(!response.ok) return;
+      const data = await response.json();
+      if(!data || !Array.isArray(data.forms)) return;
+      document.querySelectorAll('.tile[data-form]').forEach(tile => {
+        tile.hidden = !data.forms.includes(tile.dataset.form);
+      });
+    } catch(err){
+      console.error('Could not load enabled forms:', err);
+    }
+  }
+  applyEnabledForms();

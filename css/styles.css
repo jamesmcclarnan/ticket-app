@@ -376,3 +376,5 @@
   @media (prefers-reduced-motion: reduce){
     .loading-pie{animation:none;}
   }
+
+    .tile[hidden]{display:none;}
