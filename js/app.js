@@ -12,12 +12,19 @@ function showScreen(id){
   let currentCategory = null;
   let isSubmitting = false;
 
-  function selectCategory(cat){
+    function selectCategory(cat){
     currentCategory = cat;
+    document.getElementById('commonFields').style.display = cat === 'maintenance' ? 'none' : 'block';
     document.getElementById('itFields').style.display = cat === 'it' ? 'block' : 'none';
     document.getElementById('techFields').style.display = cat === 'technical' ? 'block' : 'none';
-    document.getElementById('formTitle').textContent = cat === 'it' ? "Tell us what's happening" : "Tell us what you need";
-    document.getElementById('formSubtitle').textContent = cat === 'it' ? "Fill in as much detail as you can." : "Include as much detail as you can.";
+    document.getElementById('maintFields').style.display = cat === 'maintenance' ? 'block' : 'none';
+    const copy = {
+      it: ["Tell us what's happening", "Fill in as much detail as you can."],
+      technical: ["Tell us what you need", "Include as much detail as you can."],
+      maintenance: ["Tell us about the job", "Include as much detail as you can."]
+    }[cat];
+    document.getElementById('formTitle').textContent = copy[0];
+    document.getElementById('formSubtitle').textContent = copy[1];
     showScreen('screen-form');
     setProgress(2);
   }
@@ -47,6 +54,15 @@ function showScreen(id){
     el.style.display = 'none';
   }
   function collectPayload(){
+        if(currentCategory === 'maintenance'){
+      const m = document.getElementById('maintFields');
+      return {
+        requestedBy: m.querySelector('[data-field="requestedBy"]').value,
+        site: m.querySelector('[data-field="site"]').value,
+        area: m.querySelector('[data-field="area"]').value,
+        issue: m.querySelector('[data-field="details"]').value
+      };
+    }
     const isIT = currentCategory === 'it';
     const scope = document.getElementById(isIT ? 'itFields' : 'techFields');
     return {
@@ -59,6 +75,11 @@ function showScreen(id){
     };
   }
   function showConfirmation(ticketRef){
+        const isMaint = currentCategory === 'maintenance';
+    document.getElementById('confirmTitle').textContent = isMaint ? 'Job logged' : 'Ticket submitted';
+    document.getElementById('confirmText').textContent = isMaint
+      ? 'The maintenance team will pick it up.'
+      : "We've logged your request and the right team will pick it up shortly.";
     const refEl = document.getElementById('ticketRef');
     if(ticketRef){
       refEl.textContent = '#' + ticketRef;
@@ -195,7 +216,8 @@ function showScreen(id){
     let timer;
     try {
       const payload = collectPayload();
-      const fileInput = document.getElementById(currentCategory === 'it' ? 'itFile' : 'techFile');
+            const fileIds = { it: 'itFile', technical: 'techFile', maintenance: 'maintFile' };
+      const fileInput = document.getElementById(fileIds[currentCategory]);
       if(fileInput.files && fileInput.files[0]){
         try {
           payload.attachment = await prepareAttachment(fileInput.files[0]);
@@ -207,7 +229,8 @@ function showScreen(id){
 
       const controller = new AbortController();
       timer = setTimeout(() => controller.abort(), 45000);
-      const response = await fetch('/api/submit-ticket', {
+            const endpoint = currentCategory === 'maintenance' ? '/api/submit-maintenance' : '/api/submit-ticket';
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(payload),
@@ -279,6 +302,7 @@ function showScreen(id){
   }
   setupFileDrop('itFileDrop', 'itFile');
   setupFileDrop('techFileDrop', 'techFile');
+  setupFileDrop('maintFileDrop', 'maintFile');
 
 
   document.querySelectorAll('textarea[data-field="details"]').forEach(textarea => {

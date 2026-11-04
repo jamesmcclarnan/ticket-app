@@ -378,3 +378,6 @@
   }
 
     .tile[hidden]{display:none;}
+
+     .tile .icon.emoji{font-size:26px;}
+  #commonFields .section-label, #maintFields .section-label{margin-top:28px;} 

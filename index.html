@@ -69,6 +69,13 @@
             <p>Request product specs or assistance from any of our technical team.</p>
           </span>
         </button>
+                <button class="tile" data-form="maintenance" onclick="selectCategory('maintenance')" hidden>
+          <span class="icon emoji" aria-hidden="true">🔧</span>
+          <span>
+            <h3>Maintenance</h3>
+            <p>Report a job that needs repair or maintenance attention.</p>
+          </span>
+        </button>
       </div>
     </section>
 
@@ -80,6 +87,7 @@
         <p id="formSubtitle">Fill in as much detail as you can.</p>
       </div>
 
+      <div id="commonFields">
       <div class="section-label">Your details</div>
       <div class="field">
         <label>Name <span class="req">*</span></label>
@@ -106,6 +114,7 @@
           <option>Other</option>
         </select>
         <span class="error-msg">Please select a department.</span>
+      </div>
       </div>
 
       <!-- IT-ONLY FIELDS -->
@@ -170,6 +179,43 @@
         </div>
       </div>
 
+      <!-- MAINTENANCE-ONLY FIELDS -->
+      <div id="maintFields" style="display:none;">
+        <div class="section-label">Job details</div>
+        <div class="field">
+          <label>Your name <span class="req">*</span></label>
+          <input type="text" placeholder="Full name" data-field="requestedBy" maxlength="100" autocomplete="name" required>
+          <span class="error-msg">Please enter your name.</span>
+        </div>
+        <div class="field">
+          <label>Site <span class="req">*</span></label>
+          <select required data-field="site">
+            <option value="">Select site</option>
+            <option>Lewis Pies</option>
+            <option>The Lewis Bakery</option>
+          </select>
+          <span class="error-msg">Please select a site.</span>
+        </div>
+        <div class="field">
+          <label>Area <span class="req">*</span></label>
+          <input type="text" placeholder="e.g. Pie Line 1, Despatch, Boilers" data-field="area" maxlength="100" required>
+          <span class="error-msg">Please enter the area.</span>
+        </div>
+        <div class="field">
+          <label>Issue <span class="req">*</span></label>
+          <textarea placeholder="Describe the job: what needs repairing or attention, and anything we should know" data-field="details" data-minlength="3" maxlength="1000" required></textarea><span class="char-count">0 / 1000</span>
+          <span class="error-msg">Please describe the job.</span>
+        </div>
+        <div class="field">
+          <label>Photo (optional)</label>
+          <label class="file-drop" id="maintFileDrop">
+            <input type="file" id="maintFile" accept="image/*,application/pdf">
+            <span class="file-drop-text"><strong>Tap to attach</strong> a photo, screenshot or PDF</span>
+          </label>
+          <span class="file-error" role="alert" style="display:none"></span>
+        </div>
+      </div>
+
       <p class="submit-error" id="submitError" role="alert" style="display:none"></p>
       <div class="actions">
         <button class="btn-primary" id="submitBtn" onclick="submitTicket()">
@@ -185,8 +231,8 @@
         <div class="mark">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>
         </div>
-        <h1>Ticket submitted</h1>
-        <p>We've logged your request and the right team will pick it up shortly.</p>
+        <h1 id="confirmTitle">Ticket submitted</h1>
+        <p id="confirmText">We've logged your request and the right team will pick it up shortly.</p>
         <div class="ref" id="ticketRef" style="display:none"></div>
         <div class="actions">
           <button class="btn-secondary" onclick="goToCategory()">Submit another ticket</button>
