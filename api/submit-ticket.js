@@ -6,7 +6,9 @@ import {
   FIELD_CODES,
   FILE_FIELD_CODES,
   ATTACHMENT,
-  LIMITS
+  LIMITS,
+  FORMS,
+  getEnabledForms
 } from "../lib/ticket-config.js";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -68,6 +70,12 @@ export default async function handler(req, res) {
   const category = body.category;
   if (!CATEGORIES.includes(category)) {
     return res.status(400).json({ error: "Invalid ticket category" });
+  }
+
+    const formKey = Object.keys(FORMS).find((key) => FORMS[key].category === category);
+  const enabledForms = getEnabledForms(process.env.ENABLED_FORMS);
+  if (!formKey || !enabledForms.includes(formKey)) {
+    return res.status(403).json({ error: "This form is not available" });
   }
 
   const name = clean(body.name, LIMITS.name);
