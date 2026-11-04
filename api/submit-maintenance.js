@@ -59,6 +59,7 @@ export default async function handler(req, res) {
     [fieldCodes.requestedBy]: requestedBy,
     [fieldCodes.site]: site,
     [fieldCodes.source]: MAINTENANCE.sourceValue,
+    [fieldCodes.status]: MAINTENANCE.statusValue,
     [fieldCodes.dateRaised]: formatDateRaised()
   };
 
