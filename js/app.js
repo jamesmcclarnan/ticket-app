@@ -264,26 +264,43 @@ function showScreen(id){
     const errorEl = drop.parentElement.querySelector('.file-error');
     const defaultHTML = textEl.innerHTML;
 
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'file-remove';
+    removeBtn.textContent = 'Remove attachment';
+    removeBtn.style.display = 'none';
+    drop.insertAdjacentElement('afterend', removeBtn);
+
     function showFileError(message){
       errorEl.textContent = message;
       errorEl.style.display = message ? 'block' : 'none';
     }
 
+    function clearFile(){
+      input.value = '';
+      textEl.innerHTML = defaultHTML;
+      removeBtn.style.display = 'none';
+      showFileError('');
+    }
+
+    removeBtn.addEventListener('click', clearFile);
+
     input.addEventListener('change', () => {
       const file = input.files && input.files[0];
       if(!file){
-        textEl.innerHTML = defaultHTML;
-        showFileError('');
+        clearFile();
         return;
       }
       const problem = attachmentProblem(file);
       if(problem){
         input.value = '';
         textEl.innerHTML = defaultHTML;
+        removeBtn.style.display = 'none';
         showFileError(problem);
         return;
       }
       textEl.textContent = '📎 ' + file.name;
+      removeBtn.style.display = 'inline-block';
       showFileError('');
     });
 

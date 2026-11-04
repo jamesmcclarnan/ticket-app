@@ -382,3 +382,6 @@
      .tile .icon.emoji{font-size:26px;}
   #commonFields .section-label, #maintFields .section-label{margin-top:28px;} 
     .serious-note{background:#FDF3E1;border:1px solid #F9B333;border-radius:10px;padding:12px 14px;margin:0 0 16px;font-size:13.5px;line-height:1.45;color:var(--ink);}
+
+      .file-remove{background:none;border:0;padding:8px 0 0;margin:0;font:inherit;font-size:13px;color:var(--teal);text-decoration:underline;cursor:pointer;}
+  .file-remove:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
