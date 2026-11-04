@@ -16,7 +16,7 @@ function showScreen(id){
     currentCategory = cat;
     document.getElementById('itFields').style.display = cat === 'it' ? 'block' : 'none';
     document.getElementById('techFields').style.display = cat === 'technical' ? 'block' : 'none';
-    document.getElementById('formTitle').textContent = cat === 'it' ? "Tell us what's happening" : "Tell us about the fault";
+    document.getElementById('formTitle').textContent = cat === 'it' ? "Tell us what's happening" : "Tell us what you need";
     document.getElementById('formSubtitle').textContent = cat === 'it' ? "Fill in as much detail as you can." : "Include as much detail as you can.";
     showScreen('screen-form');
     setProgress(2);
