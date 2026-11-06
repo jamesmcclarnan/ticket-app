@@ -1,6 +1,6 @@
 # Lewis Pies Ticket App: Handover
 
-Last updated: 4 November 2026. This is the single source of truth for how the
+Last updated: 6 November 2026. This is the single source of truth for how the
 app is built, where everything lives, and why decisions were made. No secrets
 belong in this file: variable *names* only, never values.
 
@@ -36,6 +36,8 @@ No login. No build step. Plain HTML/CSS/JS plus three Vercel serverless function
   off, and the home screen only shows tiles for forms that are on (section 9)
 - A4 poster with QR code. A second version that adds Maintenance was built on
   4 Nov 2026 (see section 3). Drafted all-staff launch email (IT/Technical only so far)
+- IT ticket slowness fixed in Agilebase on 5 Nov 2026 (no code change): saves had
+  been taking 11 to 49 seconds, causing false errors and a duplicate. See section 15
 
 **Open / to confirm**
 - Confirm the Maintenance confirmation screen shows the front-facing Maintenance
@@ -44,6 +46,19 @@ No login. No build step. Plain HTML/CSS/JS plus three Vercel serverless function
 - Delete test data: test tickets in the live `I2) IT Support tickets` table, any
   FILETEST/PDFTEST records in the test instance, and the Maintenance test jobs
   in `i1) Maintenance` (hide-from-engineers guardrail is James's, outside the app)
+- Duplicate from the 5 Nov incident: the same IT ticket exists twice (records 375 and
+  377, saved at 10:02 and 10:15). Keep the earlier one and mark the later as the
+  duplicate by hand (the flag only flags). Also delete the TEST records made while
+  diagnosing (an IT ticket around 11:38 and a Maintenance job around 11:36 on 5 Nov)
+- Decide whether to bring the AI Summary back, as a timed workflow rather than on
+  record creation (section 15). Until then new tickets have no AI Summary
+- Build the new-ticket notification email for the IT and Technical "received"
+  workflows with the `agilebase-email-template` skill. It needs James's exact
+  Agilebase field names first (the skill forbids curly brackets without them)
+- Send the all-staff launch email. It was drafted in a Claude chat and covers IT,
+  Technical and Maintenance; its text is not saved anywhere else yet, so paste it
+  into the launch folder. An email-sized poster image was also made
+  (`ticket-poster-for-email.png`, a download from that chat)
 - Confirm the senior maintenance engineer has an AB view of new jobs where Source
   is `Ticket App`, since Severity arrives as Minor by default and is re-graded
   there (section 5)
@@ -75,6 +90,16 @@ No login. No build step. Plain HTML/CSS/JS plus three Vercel serverless function
   purpose (a hidden tile would still show in the page source)
 - Brand alignment of the app's own CSS (section 9)
 - Narrow the Claude Filesystem connector from the whole Mac to `~/ticket-app`
+- Page timeout and wording (not built): raise the page's 45-second wait to about 90
+  seconds, show "still sending, please don't press Submit again" after about 10
+  seconds, say "your ticket may still have gone through, check with IT before
+  sending again" if the wait runs out, and show a short reference on the error
+  screen. Check Vercel's function max duration first (a call ran 49 seconds without
+  being cut off)
+- Security follow-ups: run the wrong-key test and narrow each API key's permissions,
+  move the function region to London, settle the Vercel plan and data protection
+  questions (section 11), add rate limiting, and have a second person read this
+  handover
 
 ## 3. Where everything lives
 
@@ -238,6 +263,21 @@ Earliest Created Time, Is Duplicate. A workflow sets `Duplicate Ticket?` and
 - Purpose: a safety net if the browser retries a request that did save.
 - **Maintenance has no equivalent yet** (parked, section 2).
 
+### Other workflows on the IT/Technical table (as seen on 5 Nov 2026)
+
+- `wf - ai summary it ticket`: fills AI Summary from Details. It used to run on
+  every new record. That trigger was removed on 5 Nov 2026 because it slowed every
+  save (section 15)
+- `wf - flag it ticket duplicates`: every 5 minutes, sets the duplicate flags above
+- `email - it ticket received notification` and `email - tech ticket received
+  notification`: every 5 minutes
+- `email - it ticket completed notification` and `email - technical ticket completed
+  notification`: run manually
+- `wf - it ticket completed`, `wf - tech ticket completed` and `vis - tech ticket
+  completed btn`: run manually from buttons on the record
+- Rule of thumb: a workflow that runs when a record is created can delay Agilebase's
+  reply to the app. Keep slow work (AI calls, big lookups) on a timer
+
 ## 7. Environment variables (Vercel)
 
 | Name | Purpose |
@@ -342,6 +382,9 @@ sensitive, so Vercel will not show the values again; to change one, enter it aga
   (should list the forms that are on, for example `{"forms":["it","technical","maintenance"]}`).
 - Real failure reasons are in Vercel -> Logs (search by the request ID shown on an
   error page, or by path). The page shows only a generic message by design.
+- Log retention looks like about an hour on the current plan (older entries could
+  not be opened on 5 Nov). Copy or screenshot an entry as soon as a problem is
+  reported.
 - Use `git --no-pager diff` so the diff doesn't open a pager.
 
 ## 11. Known limits
@@ -349,18 +392,25 @@ sensitive, so Vercel will not show the values again; to change one, enter it aga
 - No server-side idempotency token (the button locks while sending, and the AB flag
   catches repeats within 24 hours for IT/Technical only).
 - A save that takes over 45 seconds shows an error in the browser even if AB saved
-  it, so a retry can create a duplicate. Maintenance has no duplicate flag.
+  it, so a retry can create a duplicate. Maintenance has no duplicate flag. This
+  happened on 5 Nov 2026 (section 15).
 - Nobody is alerted when a save fails. The user sees an error and the reason is
   only in Vercel Logs (parked, section 2).
 - No rate limiting. The form is public to anyone with the link.
 - One file per ticket; images and PDFs only.
 - Vercel's Hobby plan terms are non-commercial. Revisit if this becomes a
   concern (a paid seat removes the question).
+- The functions run in Washington, D.C. (Vercel region iad1) while Agilebase is in
+  the UK. Names, emails and ticket text therefore pass through the US. This has
+  not been raised with whoever owns data protection. Moving the region to London
+  is a small configuration change (not done).
 - Not checked: whether AB enforces the API key on `Public.ab` writes. An earlier
   live key wrote successfully to the test instance. If keys aren't enforced, the
   functions' field whitelists are the only protection on the tables. To test, send
   a write with a deliberately wrong key to the TEST instance only (IT/Technical
   table; Maintenance has no test-instance setup).
+- Also not checked: what else each API key is allowed to do besides writing to its
+  table. Give each the narrowest permissions Agilebase allows.
 - The look of the pages (spacing, tap targets) is only verified by eye on real
   devices; automated checks use a simulated browser with no layout.
 
@@ -390,6 +440,15 @@ sensitive, so Vercel will not show the values again; to change one, enter it aga
   whether a function loads: open its address in a browser.
 - Old browsers and home-screen icons keep stale copies. Use the `curl` check above
   before assuming the site went backwards.
+- An Agilebase workflow that runs when a record is created can delay Agilebase's
+  reply to the app, even though the record itself saves instantly. Keep slow work
+  (AI calls, big lookups) on a timer instead.
+- Compare timestamps between Vercel Logs and the Agilebase records (request start,
+  record created time, function duration) to tell a slow save from a lost reply
+  and from a retry. A control (here Maintenance: same app and hosting, different
+  table) separates the app from Agilebase.
+- The page never retries by itself, so a duplicate means the person pressed Submit
+  again after an error.
 
 ## 13. Commands
 
@@ -422,3 +481,41 @@ node --input-type=module -e "for (const f of ['forms','submit-maintenance','subm
 | Before 4 Nov 2026 | IT and Technical built, tested and live on `tickets.lewispies.co.uk` |
 | 4 Nov 2026 | `multi-form` merged to `main` (fast-forward, commit `9a820cc`): Maintenance form, `ENABLED_FORMS` switch, `/api/forms`, shared helpers, warning line, Remove attachment. Production variables `AB_MAINTENANCE_API_KEY` and `ENABLED_FORMS` added first. Rollback point: tag `pre-multi-form-merge` (`03cb52e`) |
 | 4 Nov 2026 | Poster version with Maintenance created |
+| 5 Nov 2026 | Slow IT saves diagnosed and fixed in Agilebase (AI summary workflow no longer runs on record creation). No code change. See section 15 |
+| 6 Nov 2026 | Handover updated with the incident, the security review points and the open items |
+
+## 15. Incident log
+
+### 5 Nov 2026: slow IT tickets, false errors and a duplicate
+
+**What was seen.** A member of staff (Windows, Chrome) got "That didn't go through"
+submitting an IT ticket, then tried again. Both attempts were saved in Agilebase,
+so the same ticket exists twice.
+
+**Evidence** (Vercel Logs and the Agilebase records):
+
+| Request starts | Agilebase record created | Function ran for | Note |
+|---|---|---|---|
+| 10:02:10 | 375 at 10:02:11 | 48.8 s | First attempt. The page gave up at 45 s |
+| 10:13:59 | 376 at 10:14:00 | 11.1 s | James's test, on Android |
+| 10:15:20 | 377 at 10:15:20 | 37.5 s | The member of staff's retry |
+| 11:36 | A Maintenance test job | 0.8 s | Control: same app and hosting, different table |
+| 11:38 | An IT test ticket | 38.9 s | Still slow |
+| After the change | An IT test ticket | about 1 s | AI summary no longer runs on record creation |
+
+**Cause (strongly indicated, not seen inside Agilebase).** The workflow
+`wf - ai summary it ticket` was set to run whenever a record is created, and it was
+the only workflow on that table that did. Each record saved within a second, but
+Agilebase waited for the AI step before replying, so the app waited too. Maintenance
+has no such workflow and answered in under a second.
+
+**Why it looked like a failure.** The page waits 45 seconds and then shows its
+generic error. It does not retry by itself, so the duplicate came from the person
+pressing Submit again.
+
+**Fix.** James removed the record-creation trigger from the AI summary workflow in
+Agilebase. IT tickets now take about 1 second. New tickets no longer get an AI
+Summary. The option to restore it is a timed workflow (every 5 minutes, like the
+others); whether an AI step works on a timer in Agilebase has not been tried.
+
+**Follow-ups.** See the parked items in section 2 and the limits in section 11.
